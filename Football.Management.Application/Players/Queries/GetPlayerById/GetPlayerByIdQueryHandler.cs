@@ -1,7 +1,7 @@
 using FluentResults;
 using Football.Management.Application.Abstractions;
 using Football.Management.Domain.Entities;
-using Football.Management.Domain.Repositories;
+using Football.Management.Domain.Repositories.Players;
 
 namespace Football.Management.Application.Players.Queries.GetPlayerById;
 
@@ -14,15 +14,8 @@ public class GetPlayerByIdQueryHandler : IQueryHandler<GetPlayerByIdQuery, Playe
         _playerRepository = playerRepository;
     }
     
-    public async Task<Result<Player>> Handle(GetPlayerByIdQuery request, CancellationToken cancellationToken)
+    public Task<Result<Player>> Handle(GetPlayerByIdQuery request, CancellationToken cancellationToken)
     {
-        var player = await _playerRepository.GetAsync(request.PlayerId, cancellationToken);
-
-        if (player is null)
-        {
-            return Result.Fail("Player was not found.");
-        }
-
-        return player;
+        return _playerRepository.GetAsync(request.PlayerId, cancellationToken);
     }
 }

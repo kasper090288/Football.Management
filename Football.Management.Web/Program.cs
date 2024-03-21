@@ -1,4 +1,4 @@
-using Football.Management.Domain.Repositories;
+using Football.Management.Domain.Repositories.Players;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,7 +15,7 @@ builder.Services.AddEndpointsApiExplorer();
 //             .AddClasses(false)
 //             .AsImplementedInterfaces()
 //             .WithScopedLifetime());
-builder.Services.AddSingleton<IPlayerRepository, Football.Management.Persistence.Repositories.PlayerRepositoryInMemory>();
+builder.Services.AddSingleton<IPlayerRepository, Football.Management.Persistence.Repositories.Players.PlayerRepositoryInMemory>();
 builder.Services.AddMediatR(conf => conf.RegisterServicesFromAssembly(Football.Management.Application.AssemblyReference.Assembly));
 builder.Services.AddControllers().AddApplicationPart(Football.Management.Presentation.AssemblyReference.Assembly);
 builder.Services.AddSwaggerGen();

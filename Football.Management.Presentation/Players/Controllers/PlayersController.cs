@@ -5,11 +5,12 @@ using Football.Management.Presentation.Players.Requests;
 using Football.Management.Domain.Identities;
 using Football.Management.Application.Players.Queries.GetPlayerById;
 using Football.Management.Presentation.Players.Responses;
+using Football.Management.Domain.Repositories.Players.Errors;
 
 namespace Football.Management.Presentation.Players.Controllers;
 
 [ApiController]
-[Route("api/players")]
+[Route("api/player")]
 public sealed class PlayersController : ControllerBase
 {
     private readonly ISender _sender;
@@ -20,11 +21,11 @@ public sealed class PlayersController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreatePlayer(CreatePlayerRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> CreatePlayer(PlayerPostRequest request, CancellationToken cancellationToken)
     {
         var command = new CreatePlayerCommand(request.FirstName, request.LastName, request.AttackSkill, request.MidfieldSkill, request.DefenseSkill);
         var result = await _sender.Send(command, cancellationToken);
-        return result.IsSuccess ? Ok(result.Value) : BadRequest(result.Errors);
+        return result.IsSuccess ? Ok(result.Value) : BadRequest(new { result.Errors });
     }
 
     [HttpGet("{playerId}")]
@@ -44,6 +45,10 @@ public sealed class PlayersController : ControllerBase
                 player.DefenseSkill.Value);
             return Ok(response);
         }
-        return NotFound(result.Errors);
+        if (result.Errors.Select(e => e.GetType()).Contains(typeof(PlayerNotFound)))
+        {
+            return NoContent();
+        }
+        return Ok(result.Errors);
     }
 }

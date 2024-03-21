@@ -2,7 +2,7 @@ using FluentResults;
 using Football.Management.Application.Abstractions;
 using Football.Management.Domain.Entities;
 using Football.Management.Domain.Identities;
-using Football.Management.Domain.Repositories;
+using Football.Management.Domain.Repositories.Players;
 using Football.Management.Domain.ValueObjects;
 
 namespace Football.Management.Application.Players.Commands.CreatePlayer;
@@ -16,41 +16,41 @@ internal sealed class CreatePlayerCommandHander : ICommandHandler<CreatePlayerCo
         _playerRepository = playerRepository;
     }
     
-    public async Task<Result<PlayerId>> Handle(CreatePlayerCommand request, CancellationToken cancellationToken)
+    public Task<Result<PlayerId>> Handle(CreatePlayerCommand request, CancellationToken cancellationToken)
     {
         var firstName = PlayerFirstName.Create(request.FirstName);
 
         if (firstName.IsFailed)
         {
-            return firstName.ToResult<PlayerId>();
+            return Task.FromResult(firstName.ToResult<PlayerId>());
         }
         
         var lastName = PlayerLastName.Create(request.LastName);
 
         if (lastName.IsFailed)
         {
-            return lastName.ToResult<PlayerId>();
+            return Task.FromResult(lastName.ToResult<PlayerId>());
         }
         
         var attackSkill = PlayerAttackSkill.Create(request.AttackSkill);
 
         if (attackSkill.IsFailed)
         {
-            return attackSkill.ToResult<PlayerId>();
+            return Task.FromResult(attackSkill.ToResult<PlayerId>());
         }
         
         var midfieldSkill = PlayerMidfieldSkill.Create(request.MidfieldSkill);
 
         if (midfieldSkill.IsFailed)
         {
-            return midfieldSkill.ToResult<PlayerId>();
+            return Task.FromResult(midfieldSkill.ToResult<PlayerId>());
         }
         
         var defenseSkill = PlayerDefenseSkill.Create(request.DefenseSkill);
 
         if (defenseSkill.IsFailed)
         {
-            return defenseSkill.ToResult<PlayerId>();
+            return Task.FromResult(defenseSkill.ToResult<PlayerId>());
         }
 
         var player = Player.Create(
@@ -62,11 +62,24 @@ internal sealed class CreatePlayerCommandHander : ICommandHandler<CreatePlayerCo
 
         if (player.IsFailed)
         {
-            return player.ToResult<PlayerId>();
+            return Task.FromResult(player.ToResult<PlayerId>());
         }
 
-        await _playerRepository.AddAsync(player.Value, cancellationToken);
+        return _playerRepository
+            .AddAsync(player.Value, cancellationToken)
+            .ContinueWith(t =>
+            {
+                if (t.IsFaulted)
+                {
+                    return Result.Fail<PlayerId>("Task has failed.");
+                }
+                
+                if (t.Result.IsFailed)
+                {
+                    return t.Result.ToResult<PlayerId>();
+                }
 
-        return player.Value.Id;
+                return Result.Ok(player.Value.Id);
+            });
     }
 }
